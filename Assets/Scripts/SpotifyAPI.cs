@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -345,6 +346,24 @@ namespace CL.Spotify {
             return retval;
         }
 
+        /*
+"artists" : [ {"external_urls" : {"spotify" : "https://open.spotify.com/artist/2BTZIqw0ntH9MvilQ3ewNY"
+    },
+    "href" : "https://api.spotify.com/v1/artists/2BTZIqw0ntH9MvilQ3ewNY",
+    "id" : "2BTZIqw0ntH9MvilQ3ewNY",
+    "name" : "Cyndi Lauper",
+    "type" : "artist",
+    "uri" : "spotify:artist:2BTZIqw0ntH9MvilQ3ewNY"
+  } ],
+        */
+        private List<Artist> parseArtist(string json)
+        {
+            var retval = new List<Artist>();
+
+
+            return retval;
+        }
+
         private Album parseAlbum(string json)
         {
             var retval = new Album();
@@ -374,15 +393,11 @@ namespace CL.Spotify {
             if(retval.Simplified)
                 return retval;
 
+            retval.Artists = parseArtist(dict["artists"]);
+            //retval.Copyrights = parseC
             return retval;
         }
 
-        private Artist parseArtist(string json)
-        {
-            var retval = new Artist();
-
-            return retval;
-        }
 
         private Track parseTrack(string json)
         {
