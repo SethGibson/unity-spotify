@@ -8,6 +8,16 @@ public class JsonTest : MonoBehaviour
 {
 	public void Start()
     {
+
+	}
+
+	public void Update()
+    {
+		
+	}
+
+    public void parseTest()
+    {
         var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonStrings.Album);
 
         var albumType = parsed["album_type"].ToString();
@@ -37,6 +47,7 @@ public class JsonTest : MonoBehaviour
         var id = parsed["id"].ToString();
         
         //images
+        var imgs = JsonConvert.DeserializeObject<ArrayList>(parsed["images"].ToString());
 
         var label = parsed["label"].ToString();
         var name = parsed["name"].ToString();
@@ -49,11 +60,5 @@ public class JsonTest : MonoBehaviour
         var uri = parsed["uri"].ToString();
 
         Debug.Log("stop");
-        
-	}
-	
-	public void Update()
-    {
-		
-	}
+    }
 }
