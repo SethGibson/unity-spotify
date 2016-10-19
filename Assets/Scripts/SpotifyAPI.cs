@@ -8,24 +8,44 @@ using Newtonsoft.Json;
 namespace CL.Spotify {
     class UnityAPI
     {
+        #region Enums
         public enum AlbumType {
 	        Single,
 	        Album,
 	        Compilation
         }
+        private Dictionary<string, AlbumType> albumTypeMap = new Dictionary<string, AlbumType>
+        {
+            { "album", AlbumType.Album },
+            { "compilation", AlbumType.Compilation },
+            { "single", AlbumType.Single }
+        };
 
         public enum DatePrecision {
 	        Year,
 	        Month,
 	        Day
         }
+        private Dictionary<string, DatePrecision> dateResMap = new Dictionary<string, DatePrecision>
+        {
+            { "day", DatePrecision.Day },
+            { "month", DatePrecision.Month },
+            { "year", DatePrecision.Year }
+        };
 
-        public enum Product {
+        public enum ProductType {
             Free,
             Premium,
-            Famlily,
+            Family,
             Student
         }
+        private Dictionary<string, ProductType> productTypeMap = new Dictionary<string, ProductType>
+        {
+            { "free", ProductType.Free },
+            { "premium", ProductType.Premium },
+            { "family", ProductType.Family },
+            { "student", ProductType.Student }
+        };
 
         public enum PlaylistStatus {
             Public,
@@ -33,17 +53,25 @@ namespace CL.Spotify {
             NA
         }
 
-        public enum EIdType {
+        public enum ExtIdType {
             Upc,
             Ean,
             Isrc
         }
+        private Dictionary<string, ExtIdType> extIdMap = new Dictionary<string, ExtIdType>
+        {
+            { "upc", ExtIdType.Upc },
+            { "ean", ExtIdType.Ean },
+            { "isrc", ExtIdType.Isrc }
+        };
 
-        public enum EUrlType {
+        public enum ExtUrlType {
             Spotify,
             Other
         }
+        #endregion
 
+        #region Structs
         public struct Copyright {
 	        public enum Type {
 		        C,
@@ -54,12 +82,12 @@ namespace CL.Spotify {
         }
 
         public struct ExternalID {
-	        public EIdType IdType;
+	        public ExtIdType IdType;
 	        public string value;
         }
 
         public struct ExternalURL {
-	        public EUrlType UrlType;
+	        public ExtUrlType UrlType;
 	        public string value;
         }
 
@@ -147,7 +175,7 @@ namespace CL.Spotify {
             private string          Country;
             private string          Email;
             private Followers       Followers;
-            private Product         Product;
+            private ProductType         Product;
     
             public string           DisplayName;
             public ExternalURL      ExternalUrls;
@@ -172,6 +200,9 @@ namespace CL.Spotify {
             string                  Uri;
         }
 
+        #endregion
+
+        #region API
         public User GetUserProfile(string userId)
         {
             return new User();
@@ -245,26 +276,35 @@ namespace CL.Spotify {
         {
             return new List<Track>();
         }
+        #endregion
 
-        #region object parsing
-        private Copyright parseCopyright(string json)
-        {
-            return new Copyright();
-        }
-
-        private ExternalID parseExternalID(string json)
-        {
-            return new ExternalID();
-        }
-
+        #region Parsers
         private TrackLink parseTrackLink(string json)
         {
             return new TrackLink();
         }
 
-        private SPImage parseImage(Dictionary<string,object> json)
+        private ExternalID parseExternalID(Dictionary<string,string> json)
         {
-            var retval = new SPImage();
+            return new ExternalID();
+        }
+
+        private Copyright parseCopyright(Dictionary<string, string> json)
+        {
+            var retval = new Copyright();
+            var cOrP = json["type"];
+            if(cOrP=="C")
+                retval.Rights = Copyright.Type.C;
+            else
+                retval.Rights = Copyright.Type.P;
+            retval.value = json["text"];
+
+            return retval;
+        }
+
+        private List<SPImage> parseImage(Dictionary<string,object> json)
+        {
+            var retval = new List<SPImage>();
             retval.Height = int.Parse(json["height"].ToString());
             retval.Width = int.Parse(json["width"].ToString());
             retval.Url = json["url"].ToString();
@@ -277,9 +317,9 @@ namespace CL.Spotify {
             var retval = new ExternalURL();
             foreach(var k in json.Keys) {
                 if(k=="spotify")
-                    retval.UrlType=EUrlType.Spotify;
+                    retval.UrlType=ExtUrlType.Spotify;
                 else
-                    retval.UrlType=EUrlType.Other;
+                    retval.UrlType=ExtUrlType.Other;
 
                 retval.value = json[k];
             }
@@ -330,43 +370,42 @@ namespace CL.Spotify {
             var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
 
             var albumType = parsed["album_type"].ToString();
+            retval.AlbumType = albumTypeMap[albumType];
 
             var arr = JsonConvert.DeserializeObject<ArrayList>(parsed["artists"].ToString());
-            List<Dictionary<string,object>> artists = new List<Dictionary<string, object>>();
             for(int i=0;i<arr.Count;++i) {
                 var artist = JsonConvert.DeserializeObject<Dictionary<string,object>>(arr[i].ToString());
-                //parseArtist(artist) 
-                artists.Add(artist);
+                retval.Artists.Add(parseArtist(artist));
             }
 
-            var markets = JsonConvert.DeserializeObject<List<string>>(parsed["available_markets"].ToString());
+            retval.AvailableMarkets = JsonConvert.DeserializeObject<List<string>>(parsed["available_markets"].ToString());
         
             arr = JsonConvert.DeserializeObject<ArrayList>(parsed["copyrights"].ToString());
             List<Dictionary<string,string>> copyrights = new List<Dictionary<string, string>>();
             for(int i=0;i<arr.Count;++i) {
                 var cr = JsonConvert.DeserializeObject<Dictionary<string,string>>(arr[i].ToString());
-                //parseCopyright(cr) 
-                copyrights.Add(cr);
+                retval.Copyrights.Add(parseCopyright(cr));
             }
 
             var externalIds = JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_ids"].ToString());
+            retval.ExternalIds = parseExternalID(externalIds);
             var externalUrls = JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_urls"].ToString());
-            var genres = JsonConvert.DeserializeObject<List<string>>(parsed["genres"].ToString());
-            var endpoint = parsed["href"].ToString();
-            var id = parsed["id"].ToString();
+            retval.Genres = JsonConvert.DeserializeObject<List<string>>(parsed["genres"].ToString());
+            retval.Endpoint = parsed["href"].ToString();
+            retval.Id = parsed["id"].ToString();
         
             //images
 
-            var label = parsed["label"].ToString();
-            var name = parsed["name"].ToString();
-            var popularity = int.Parse(parsed["popularity"].ToString());
-            var releaseDate = parsed["release_date"].ToString();
+            retval.Label = parsed["label"].ToString();
+            retval.Name = parsed["name"].ToString();
+            retval.Popularity = int.Parse(parsed["popularity"].ToString());
+            retval.ReleaseDate = parsed["release_date"].ToString();
             var rdPrecision = parsed["release_date_precision"].ToString();
+            retval.ReleaseDatePrecision = dateResMap[rdPrecision];
 
             //tracks
 
-            var uri = parsed["uri"].ToString();
-
+            retval.Uri = parsed["uri"].ToString();
 
             return retval;
         }
