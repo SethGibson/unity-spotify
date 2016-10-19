@@ -108,7 +108,7 @@ namespace CL.Spotify {
         }
 
         public struct Artist {
-            public List<ExternalURL>    ExternalUrls;
+            public ExternalURL      ExternalUrls;
 	        public Followers	    Followers;
 	        public List<string>	    Genres;
 	        public string		    Endpoint; // "href"
@@ -249,175 +249,142 @@ namespace CL.Spotify {
         #region object parsing
         private Copyright parseCopyright(string json)
         {
-            var retval = new Copyright();
-            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(json);
-            retval.value = dict["text"];
-            var crt = dict["type"];
-            if(crt=="C")
-                retval.Rights = Copyright.Type.C;
-            else
-                retval.Rights = Copyright.Type.P;
-
-            return retval;
+            return new Copyright();
         }
 
-        private List<ExternalID> parseExternalID(string json)
+        private ExternalID parseExternalID(string json)
         {
-            // "external_ids" : { "upc" : "XXXXXXXXXXXX", "ean" : "YYYYYYYYYYYYY", "isrc" : "ZZZZZZZZZZZZZ"}
-            var retval = new List<ExternalID>();
-            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(json);
-            /*
-            dict["upc"]="XXXXXXXXXXXXX";
-            dict["ean"]="YYYYYYYYYYYYY"
-            dict["isrc"]="ZZZZZZZZZZZZZ"
-            */
-
-            foreach(var k in dict.Keys) {
-                var eid = new ExternalID();
-                switch(k) {
-                    case "upc":
-                        eid.IdType = EIdType.Upc;
-                        break;
-                    case "ean":
-                        eid.IdType = EIdType.Ean;
-                        break;
-                    case "isrc":
-                        eid.IdType = EIdType.Isrc;
-                        break;
-                }
-                
-                eid.value = dict[k];
-                retval.Add(eid);
-            }
-
-            return retval;
-        }
-
-        private List<ExternalURL> parseExternalURL(string json)
-        {
-            var retval = new List<ExternalURL>();
-	        var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(json);
-            foreach(var k in dict.Keys) {
-                var eid = new ExternalURL();
-                switch(k) {
-                    case "spotify":
-                        eid.UrlType = EUrlType.Spotify;
-                        break;
-                    default:
-                        eid.UrlType = EUrlType.Other;
-                        break;
-                }
-                
-                eid.value = dict[k];
-                retval.Add(eid);
-            }
-
-            return retval;
-        }
-
-        private List<SPImage> parseImage(string json)
-        {
-            var retval = new List<SPImage>();
-
-            return retval;
-        }
-
-        private Followers parseFollowers(string json)
-        {
-            var retval = new Followers();
-	        var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(json);
-
-            retval.Endpoint = dict["href"];
-            retval.Total = int.Parse(dict["total"]);
-
-            return retval;
+            return new ExternalID();
         }
 
         private TrackLink parseTrackLink(string json)
         {
-            var retval = new TrackLink();
-	        var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(json);
+            return new TrackLink();
+        }
 
-            retval.EndPoint = dict["href"];
-            retval.ExternalUrls = parseExternalURL(dict["external_urls"]);
-            retval.Id = dict["id"];
-            retval.Uri = dict["uri"];
+        private SPImage parseImage(Dictionary<string,object> json)
+        {
+            var retval = new SPImage();
+            retval.Height = int.Parse(json["height"].ToString());
+            retval.Width = int.Parse(json["width"].ToString());
+            retval.Url = json["url"].ToString();
 
             return retval;
         }
 
-        /*
-"artists" : [ {"external_urls" : {"spotify" : "https://open.spotify.com/artist/2BTZIqw0ntH9MvilQ3ewNY"
-    },
-    "href" : "https://api.spotify.com/v1/artists/2BTZIqw0ntH9MvilQ3ewNY",
-    "id" : "2BTZIqw0ntH9MvilQ3ewNY",
-    "name" : "Cyndi Lauper",
-    "type" : "artist",
-    "uri" : "spotify:artist:2BTZIqw0ntH9MvilQ3ewNY"
-  } ],
-        */
-        private List<Artist> parseArtist(string json)
+        private ExternalURL parseExternalURL(Dictionary<string,string> json)
         {
-            var retval = new List<Artist>();
+            var retval = new ExternalURL();
+            foreach(var k in json.Keys) {
+                if(k=="spotify")
+                    retval.UrlType=EUrlType.Spotify;
+                else
+                    retval.UrlType=EUrlType.Other;
 
+                retval.value = json[k];
+            }
 
+            return retval;
+        }
+
+        private Followers parseFollowers(Dictionary<string,object> json)
+        {
+            var retval = new Followers();
+
+            retval.Endpoint = json["href"].ToString();
+            retval.Total = int.Parse(json["total"].ToString());
+            return retval;
+        }
+
+        private Artist parseArtist(Dictionary<string,object> json)
+        {
+            var retval = new Artist();
+            retval.Simplified = false;
+            retval.ExternalUrls = parseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"].ToString()));
+            retval.Endpoint = json["href"].ToString();
+            retval.Id = json["id"].ToString();
+            retval.Name = json["name"].ToString();
+            retval.Uri = json["uri"].ToString();
+            if(!json.ContainsKey("followers")) {
+                retval.Simplified = true;
+                return retval;
+            }
+
+            retval.Genres = JsonConvert.DeserializeObject<List<string>>(json["genres"].ToString());
+            retval.Followers = parseFollowers(JsonConvert.DeserializeObject<Dictionary<string,object>>(json["followers"].ToString()));
+
+            retval.Images = new List<SPImage>();
+            var srcimages = JsonConvert.DeserializeObject<ArrayList>(json["images"].ToString());
+            for(int i=0;i<srcimages.Count;++i) {
+                var img = JsonConvert.DeserializeObject<Dictionary<string,object>>(srcimages[i].ToString());
+                retval.Images.Add(parseImage(img));
+            }
+
+            retval.Popularity = int.Parse(json["popularity"].ToString());
             return retval;
         }
 
         private Album parseAlbum(string json)
         {
             var retval = new Album();
-            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(json);
+            var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
 
-            var atype = dict["album_type"];
-            switch(atype) {
-                case "album":
-                    retval.AlbumType = AlbumType.Album;
-                    break;
-                case "single":
-                    retval.AlbumType = AlbumType.Single;
-                    break;
-                case "compilation":
-                    retval.AlbumType = AlbumType.Compilation;
-                    break;
+            var albumType = parsed["album_type"].ToString();
+
+            var arr = JsonConvert.DeserializeObject<ArrayList>(parsed["artists"].ToString());
+            List<Dictionary<string,object>> artists = new List<Dictionary<string, object>>();
+            for(int i=0;i<arr.Count;++i) {
+                var artist = JsonConvert.DeserializeObject<Dictionary<string,object>>(arr[i].ToString());
+                //parseArtist(artist) 
+                artists.Add(artist);
             }
 
-            retval.Simplified = !dict.ContainsKey("copyrights");
-            retval.AvailableMarkets = JsonConvert.DeserializeObject<List<string>>(dict["available_markets"]);
-            retval.ExternalUrls = parseExternalURL(dict["external_urls"]);
-            retval.Endpoint = dict["href"];
-            retval.Id = dict["id"];
-            retval.Images = parseImage(dict["images"]);
-            retval.Name = dict["name"];
-            retval.Uri = dict["uri"];
-            if(retval.Simplified)
-                return retval;
+            var markets = JsonConvert.DeserializeObject<List<string>>(parsed["available_markets"].ToString());
+        
+            arr = JsonConvert.DeserializeObject<ArrayList>(parsed["copyrights"].ToString());
+            List<Dictionary<string,string>> copyrights = new List<Dictionary<string, string>>();
+            for(int i=0;i<arr.Count;++i) {
+                var cr = JsonConvert.DeserializeObject<Dictionary<string,string>>(arr[i].ToString());
+                //parseCopyright(cr) 
+                copyrights.Add(cr);
+            }
 
-            retval.Artists = parseArtist(dict["artists"]);
-            //retval.Copyrights = parseC
+            var externalIds = JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_ids"].ToString());
+            var externalUrls = JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_urls"].ToString());
+            var genres = JsonConvert.DeserializeObject<List<string>>(parsed["genres"].ToString());
+            var endpoint = parsed["href"].ToString();
+            var id = parsed["id"].ToString();
+        
+            //images
+
+            var label = parsed["label"].ToString();
+            var name = parsed["name"].ToString();
+            var popularity = int.Parse(parsed["popularity"].ToString());
+            var releaseDate = parsed["release_date"].ToString();
+            var rdPrecision = parsed["release_date_precision"].ToString();
+
+            //tracks
+
+            var uri = parsed["uri"].ToString();
+
+
             return retval;
         }
 
 
         private Track parseTrack(string json)
         {
-            var retval = new Track();
-
-            return retval;
+            return new Track();
         }
 
         private User parseUser(string json)
         {
-            var retval = new User();
-
-            return retval;
+            return new User();
         }
 
         private Playlist parsePlaylist(string json)
         {
-            var retval = new Playlist();
-
-            return retval;
+            return new Playlist();
         }
         #endregion
     }
