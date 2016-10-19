@@ -14,7 +14,7 @@ namespace CL.Spotify {
 	        Album,
 	        Compilation
         }
-        private Dictionary<string, AlbumType> albumTypeMap = new Dictionary<string, AlbumType>
+        public static Dictionary<string, AlbumType> albumTypeMap = new Dictionary<string, AlbumType>
         {
             { "album", AlbumType.Album },
             { "compilation", AlbumType.Compilation },
@@ -26,7 +26,7 @@ namespace CL.Spotify {
 	        Month,
 	        Day
         }
-        private Dictionary<string, DatePrecision> dateResMap = new Dictionary<string, DatePrecision>
+        public static Dictionary<string, DatePrecision> dateResMap = new Dictionary<string, DatePrecision>
         {
             { "day", DatePrecision.Day },
             { "month", DatePrecision.Month },
@@ -39,7 +39,7 @@ namespace CL.Spotify {
             Family,
             Student
         }
-        private Dictionary<string, ProductType> productTypeMap = new Dictionary<string, ProductType>
+        public static Dictionary<string, ProductType> productTypeMap = new Dictionary<string, ProductType>
         {
             { "free", ProductType.Free },
             { "premium", ProductType.Premium },
@@ -58,7 +58,7 @@ namespace CL.Spotify {
             Ean,
             Isrc
         }
-        private Dictionary<string, ExtIdType> extIdMap = new Dictionary<string, ExtIdType>
+        public static Dictionary<string, ExtIdType> extIdMap = new Dictionary<string, ExtIdType>
         {
             { "upc", ExtIdType.Upc },
             { "ean", ExtIdType.Ean },
@@ -285,17 +285,17 @@ namespace CL.Spotify {
         #endregion
 
         #region Parsers
-        private User parseUser(string json)
+        public static User ParseUser(string json)
         {
             return new User();
         }
 
-        private Playlist parsePlaylist(string json)
+        public static Playlist ParsePlaylist(string json)
         {
             return new Playlist();
         }
 
-        private Track parseTrack(Dictionary<string, string> json)
+        public static Track ParseTrack(Dictionary<string, string> json)
         {
             var retval = new Track();
 
@@ -303,17 +303,17 @@ namespace CL.Spotify {
             retval.Artists = new List<Artist>();
             for(int i=0;i<arr.Count;++i) {
                 var artist = JsonConvert.DeserializeObject<Dictionary<string,object>>(arr[i].ToString());
-                retval.Artists.Add(parseArtist(artist));
+                retval.Artists.Add(ParseArtist(artist));
             }
 	        retval.AvailableMarkets = JsonConvert.DeserializeObject<List<string>>(json["available_markets"]);
 	        retval.DiskNumber = int.Parse(json["disk_number"]);
             retval.DurationMS = int.Parse(json["duration_ms"]);
             retval.Explicit = bool.Parse(json["explicit"]);
-	        retval.ExternalUrls = parseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"].ToString()));
+	        retval.ExternalUrls = ParseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"].ToString()));
 	        retval.Endpoint = json["href"];
 	        retval.Id = json["id"];
 	        retval.IsPlayable = bool.Parse(json["is_playable"]);
-            retval.LinkedFrom = parseTrackLink(JsonConvert.DeserializeObject<Dictionary<string, string>>(json["linked_from"]));
+            retval.LinkedFrom = ParseTrackLink(JsonConvert.DeserializeObject<Dictionary<string, string>>(json["linked_from"]));
 	        retval.Name = json["name"];
 	        retval.PreviewUrl = json["preview_url"];
             retval.TrackNumber = int.Parse(json["track_number"]);
@@ -325,17 +325,17 @@ namespace CL.Spotify {
             }
 
             retval.Simplified = false;
-	        retval.Album = parseAlbum(json["album"]);
+	        retval.Album = ParseAlbum(json["album"]);
 	        var externalIds = JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_ids"].ToString());
-            retval.ExternalIds = parseExternalID(externalIds);
+            retval.ExternalIds = ParseExternalID(externalIds);
 	        retval.Popularity = int.Parse(json["popularity"]);
             return retval;
         }
 
-        private TrackLink parseTrackLink(Dictionary<string,string> json)
+        public static TrackLink ParseTrackLink(Dictionary<string,string> json)
         {
             var retval = new TrackLink();
-            retval.ExternalUrls = parseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"]));
+            retval.ExternalUrls = ParseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"]));
             retval.EndPoint = json["href"];
             retval.Id = json["id"];
             retval.Uri = json["uri"];
@@ -343,7 +343,7 @@ namespace CL.Spotify {
             return retval;
         }
 
-        private ExternalID parseExternalID(Dictionary<string,string> json)
+        public static ExternalID ParseExternalID(Dictionary<string,string> json)
         {
             var retval = new ExternalID();
             List<string> k = new List<string>(json.Keys);
@@ -353,7 +353,7 @@ namespace CL.Spotify {
             return retval;
         }
 
-        private Copyright parseCopyright(Dictionary<string, string> json)
+        public static Copyright ParseCopyright(Dictionary<string, string> json)
         {
             var retval = new Copyright();
             var cOrP = json["type"];
@@ -366,7 +366,7 @@ namespace CL.Spotify {
             return retval;
         }
 
-        private SPImage parseImage(Dictionary<string,object> json)
+        public static SPImage ParseImage(Dictionary<string,object> json)
         {
             var retval = new SPImage();
             retval.Height = int.Parse(json["height"].ToString());
@@ -376,7 +376,7 @@ namespace CL.Spotify {
             return retval;
         }
 
-        private ExternalURL parseExternalURL(Dictionary<string,string> json)
+        public static ExternalURL ParseExternalURL(Dictionary<string,string> json)
         {
             var retval = new ExternalURL();
             foreach(var k in json.Keys) {
@@ -391,7 +391,7 @@ namespace CL.Spotify {
             return retval;
         }
 
-        private Followers parseFollowers(Dictionary<string,object> json)
+        public static Followers ParseFollowers(Dictionary<string,object> json)
         {
             var retval = new Followers();
 
@@ -400,11 +400,11 @@ namespace CL.Spotify {
             return retval;
         }
 
-        private Artist parseArtist(Dictionary<string,object> json)
+        public static Artist ParseArtist(Dictionary<string,object> json)
         {
             var retval = new Artist();
             retval.Simplified = false;
-            retval.ExternalUrls = parseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"].ToString()));
+            retval.ExternalUrls = ParseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(json["external_urls"].ToString()));
             retval.Endpoint = json["href"].ToString();
             retval.Id = json["id"].ToString();
             retval.Name = json["name"].ToString();
@@ -416,20 +416,20 @@ namespace CL.Spotify {
 
             retval.Simplified = false;
             retval.Genres = JsonConvert.DeserializeObject<List<string>>(json["genres"].ToString());
-            retval.Followers = parseFollowers(JsonConvert.DeserializeObject<Dictionary<string,object>>(json["followers"].ToString()));
+            retval.Followers = ParseFollowers(JsonConvert.DeserializeObject<Dictionary<string,object>>(json["followers"].ToString()));
 
             retval.Images = new List<SPImage>();
             var srcimages = JsonConvert.DeserializeObject<ArrayList>(json["images"].ToString());
             for(int i=0;i<srcimages.Count;++i) {
                 var img = JsonConvert.DeserializeObject<Dictionary<string,object>>(srcimages[i].ToString());
-                retval.Images.Add(parseImage(img));
+                retval.Images.Add(ParseImage(img));
             }
 
             retval.Popularity = int.Parse(json["popularity"].ToString());
             return retval;
         }
 
-        private Album parseAlbum(string json)
+        public static Album ParseAlbum(string json)
         {
             var retval = new Album();
             var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
@@ -437,14 +437,14 @@ namespace CL.Spotify {
             var albumType = parsed["album_type"].ToString();
             retval.AlbumType = albumTypeMap[albumType];
             retval.AvailableMarkets = JsonConvert.DeserializeObject<List<string>>(parsed["available_markets"].ToString());
-            retval.ExternalUrls = parseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_urls"].ToString()));
+            retval.ExternalUrls = ParseExternalURL(JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_urls"].ToString()));
             retval.Endpoint = parsed["href"].ToString();
             retval.Id = parsed["id"].ToString();
             retval.Images = new List<SPImage>();
             var srcimages = JsonConvert.DeserializeObject<ArrayList>(parsed["images"].ToString());
             for(int i=0;i<srcimages.Count;++i) {
                 var img = JsonConvert.DeserializeObject<Dictionary<string,object>>(srcimages[i].ToString());
-                retval.Images.Add(parseImage(img));
+                retval.Images.Add(ParseImage(img));
             }
             retval.Name = parsed["name"].ToString();
             retval.Uri = parsed["uri"].ToString();
@@ -458,7 +458,7 @@ namespace CL.Spotify {
             retval.Artists = new List<Artist>();
             for(int i=0;i<arr.Count;++i) {
                 var artist = JsonConvert.DeserializeObject<Dictionary<string,object>>(arr[i].ToString());
-                retval.Artists.Add(parseArtist(artist));
+                retval.Artists.Add(ParseArtist(artist));
             }
         
             arr = JsonConvert.DeserializeObject<ArrayList>(parsed["copyrights"].ToString());
@@ -466,11 +466,11 @@ namespace CL.Spotify {
             retval.Copyrights = new List<Copyright>();
             for(int i=0;i<arr.Count;++i) {
                 var cr = JsonConvert.DeserializeObject<Dictionary<string,string>>(arr[i].ToString());
-                retval.Copyrights.Add(parseCopyright(cr));
+                retval.Copyrights.Add(ParseCopyright(cr));
             }
 
             var externalIds = JsonConvert.DeserializeObject<Dictionary<string,string>>(parsed["external_ids"].ToString());
-            retval.ExternalIds = parseExternalID(externalIds);
+            retval.ExternalIds = ParseExternalID(externalIds);
             retval.Genres = JsonConvert.DeserializeObject<List<string>>(parsed["genres"].ToString());
             retval.Label = parsed["label"].ToString();
             retval.Popularity = int.Parse(parsed["popularity"].ToString());
@@ -483,7 +483,7 @@ namespace CL.Spotify {
             retval.Tracks = new List<Track>();
             for(int i=0;i<arr.Count;++i) {
                 var t = JsonConvert.DeserializeObject<Dictionary<string,string>>(arr[i].ToString());
-                retval.Tracks.Add(parseTrack(t));
+                retval.Tracks.Add(ParseTrack(t));
             }
 
             return retval;

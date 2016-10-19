@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using CL.Spotify;
 
 public class JsonTest : MonoBehaviour
 {
+    private UnityAPI.Album testAlbum;
+
 	public void Start()
     {
 
@@ -16,7 +19,7 @@ public class JsonTest : MonoBehaviour
 		
 	}
 
-    public void parseTest()
+    public void parseRawTest()
     {
         var parsed = JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonStrings.Album);
 
@@ -60,5 +63,10 @@ public class JsonTest : MonoBehaviour
         var uri = parsed["uri"].ToString();
 
         Debug.Log("stop");
+    }
+
+    public void ParseAlbum()
+    {
+        CL.Spotify.UnityAPI.ParseAlbum(JsonStrings.Album);
     }
 }
